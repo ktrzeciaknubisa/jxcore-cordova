@@ -15,6 +15,26 @@ import android.net.wifi.WifiManager;
 import android.util.Log;
 
 public class JXMobile {
+
+	public static String getStatusString(NetworkInfo[] netInfo, Boolean asJSON) {
+		String info = "NotConnected";
+		for (NetworkInfo ni : netInfo) {
+			if (ni.getTypeName().equalsIgnoreCase("WIFI"))
+				if (ni.isConnected()) {
+					info = "WiFi";
+					break;
+				}
+
+			if (ni.getTypeName().equalsIgnoreCase("MOBILE"))
+				if (ni.isConnected()) {
+					info = "WWAN";
+					break;
+				}
+		}
+
+		return asJSON ? "{\"" + info + "\":1}" : info;
+	}
+
   public static void Initialize() {
     jxcore.RegisterMethod("OnError", new JXcoreCallback() {
       @SuppressLint("NewApi")
@@ -41,26 +61,11 @@ public class JXMobile {
       @SuppressLint("NewApi")
       @Override
       public void Receiver(ArrayList<Object> params, String callbackId) {
-        ConnectivityManager cm = (ConnectivityManager) jxcore.activity
-            .getBaseContext().getSystemService(Context.CONNECTIVITY_SERVICE);
+				ConnectivityManager cm = (ConnectivityManager) jxcore.activity
+						.getBaseContext().getSystemService(Context.CONNECTIVITY_SERVICE);
 
-        String info = "{\"NotConnected\":1}";
-        @SuppressWarnings("deprecation")
-        NetworkInfo[] netInfo = cm.getAllNetworkInfo();
-        for (NetworkInfo ni : netInfo) {
-          if (ni.getTypeName().equalsIgnoreCase("WIFI"))
-            if (ni.isConnected()) {
-              info = "{\"WiFi\":1}";
-              break;
-            }
-          if (ni.getTypeName().equalsIgnoreCase("MOBILE"))
-            if (ni.isConnected()) {
-              info = "{\"WWAN\":1}";
-              break;
-            }
-        }
-
-        jxcore.CallJSMethod(callbackId, info);
+				String info = JXMobile.getStatusString(cm.getAllNetworkInfo(), true);
+				jxcore.CallJSMethod(callbackId, info);
       }
     });
 
@@ -77,7 +82,8 @@ public class JXMobile {
     });
 
     /*
-     * ADD: <uses-permission android:name="android.permission.BLUETOOTH" />
+     * ADD: 
+     * <uses-permission android:name="android.permission.BLUETOOTH" />
      * <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
      */
     jxcore.RegisterMethod("ToggleBluetooth", new JXcoreCallback() {
@@ -91,14 +97,14 @@ public class JXMobile {
           mBluetoothAdapter.enable();
         else
           mBluetoothAdapter.disable();
-
+        
         jxcore.CallJSMethod(callbackId, "null");
       }
     });
 
     /*
-     * ADD: <uses-permission android:name="android.permission.CHANGE_WIFI_STATE"
-     * />
+     * ADD: 
+     * <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
      */
     jxcore.RegisterMethod("ToggleWiFi", new JXcoreCallback() {
       @SuppressLint("NewApi")
@@ -108,12 +114,12 @@ public class JXMobile {
         WifiManager wifiManager = (WifiManager) jxcore.activity
             .getBaseContext().getSystemService(Context.WIFI_SERVICE);
         wifiManager.setWifiEnabled(enabled);
-
-        if (enabled) {
+        
+        if(enabled) {
           wifiManager.disconnect();
           wifiManager.reconnect();
         }
-
+        
         jxcore.CallJSMethod(callbackId, "null");
       }
     });
